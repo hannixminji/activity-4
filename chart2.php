@@ -1,37 +1,31 @@
 <?php
-
 $dsn = 'mysql:host=localhost;port=3306;dbname=coffee_shop;charset=utf8mb4';
 $username = 'root';
 $password = '';
 
 try {
     $pdo = new PDO($dsn, $username, $password);
-    
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $sql = "
         SELECT
-            ProductType.ProductType AS ProductType,
+            ProductType.ProductType AS `ProductType`,
             Product.ProductID,
             Product.ProductName,
             Price.Size,
             Price.Price,
-            SUM(TransactionDetail.Quantity) AS Quantity,
-            SUM(TransactionDetail.Quantity * Price.Price) AS TotalAmount
+            SUM(TransactionDetail.Quantity) AS `Quantity`,
+            SUM(TransactionDetail.Quantity * Price.Price) AS `TotalAmount`
         FROM 
             POSTransDetails AS TransactionDetail
         JOIN
-            POSTransHeader AS TransactionHeader 
-            ON TransactionDetail.TransID = TransactionHeader.TransID
+            POSTransHeader AS TransactionHeader ON TransactionDetail.TransID = TransactionHeader.TransID
         JOIN
-            Products AS Product 
-            ON TransactionDetail.ProductID = Product.ProductID
+            Products AS Product ON TransactionDetail.ProductID = Product.ProductID
         JOIN
-            ProductPrice AS Price 
-            ON TransactionDetail.PriceID = Price.PriceID
+            ProductPrice AS Price ON TransactionDetail.PriceID = Price.PriceID
         JOIN
-            ProductType AS ProductType 
-            ON Product.ProductTypeID = ProductType.ProductTypeID
+            ProductType AS ProductType ON Product.ProductTypeID = ProductType.ProductTypeID
         GROUP BY
             ProductType.ProductType,
             Product.ProductID,
@@ -57,3 +51,4 @@ try {
 } catch (PDOException $e) {
     echo "Error: " . $e->getMessage();
 }
+?>

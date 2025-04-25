@@ -3,48 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Sales Chart</title>
+    <title>Coffee Shop Sales Data</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            font-size: 36px;
+            color: #333;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 32px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        button:focus {
+            outline: none;
+        }
+
+        canvas {
+            margin-top: 30px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Product Sales Data</h2>
-    <canvas id="myChart" width="400" height="200"></canvas>
-    <script>
-        fetch('chart.php')
-            .then(response => response.json())
-            .then(data => {
-                const labels = data.map(item => `${item.ProductName} (${item.Size})`);
-                const quantities = data.map(item => item.Quantity);
-                const totalAmounts = data.map(item => item.TotalAmount);
+    <h1>Coffee Shop Sales Data</h1>
 
-                const ctx = document.getElementById('myChart').getContext('2d');
-                const myChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Quantity Sold',
-                            data: quantities,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderWidth: 1
-                        }, {
-                            label: 'Total Amount',
-                            data: totalAmounts,
-                            borderColor: 'rgba(153, 102, 255, 1)',
-                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
+    <button onclick="loadChart1()">Show Total Amount by Date</button>
+    <button onclick="loadChart2()">Show Product Sales by Size</button>
+
+    <canvas id="salesChart" width="1200" height="500"></canvas>
+
+    <script>
+        let chartInstance = null;
+
+        function loadChart1() {
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            fetch('chart1.php')
+                .then(response => response.json())
+                .then(data => {
+                    const dates = data.map(item => item.Date);
+                    const totalAmounts = data.map(item => item.TotalAmount);
+
+                    const ctx = document.getElementById('salesChart').getContext('2d');
+                    chartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: dates,
+                            datasets: [{
+                                label: 'Total Amount',
+                                data: totalAmounts,
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Total Amount per Date'
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Date'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Total Amount'
+                                    }
+                                }
                             }
                         }
-                    }
-                });
-            });
+                    });
+                })
+                .catch(error => console.error('Error fetching data for Chart 1:', error));
+        }
+
+        function loadChart2() {
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            fetch('chart2.php')
+                .then(response => response.json())
+                .then(data => {
+                    const productNames = [...new Set(data.map(item => item.ProductName))];
+                    const sizes = [...new Set(data.map(item => item.Size || 'No Size'))];
+
+                    const sizeColors = {
+                        "Small (12 Oz)": "#4CAF50",
+                        "Medium (24 Oz)": "#FF9800",
+                        "Large (36 Oz)": "#2196F3",
+                        "No Size": "#FFC107"
+                    };
+
+                    const datasets = sizes.map(size => {
+                        return {
+                            label: size,
+                            data: productNames.map(product => {
+                                const item = data.find(d => d.ProductName === product && (d.Size || 'No Size') === size);
+                                return item ? parseInt(item.Quantity) : 0;
+                            }),
+                            backgroundColor: sizeColors[size] || "#000000"
+                        };
+                    });
+
+                    const ctx = document.getElementById('salesChart').getContext('2d');
+                    chartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: productNames,
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Product Sales by Size'
+                                },
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    stacked: false,
+                                    title: {
+                                        display: true,
+                                        text: 'Product Name'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Quantity Sold'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching data for Chart 2:', error));
+        }
+
+        window.onload = loadChart1;
     </script>
 </body>
 </html>
